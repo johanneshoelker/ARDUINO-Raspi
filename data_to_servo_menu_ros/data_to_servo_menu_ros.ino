@@ -1,8 +1,6 @@
 #include <ros.h>
-
 #include <Servo.h>
-#include <std_msgs/String.h>
-#include <std_msgs/Empty.h>
+#include <testing/Angles.h>
 ros::NodeHandle nh;
 
 Servo base;
@@ -14,14 +12,13 @@ Servo wrist_ver;
 Servo gripper;
 
 
-int angle_arm, angle_forearm, angle_hand, rot_hand, rot_shoulder, claw_on_off;
-int rot_upper=10;
-int INPUT_SIZE = 30;
-char tempChars[21];
-int winkels[4];
-int data[7];
-String msg;
-char buffer[27];
+int angle_arm, angle_forearm, angle_hand, rot_hand, rot_shoulder, claw_on_off,rot_upper;
+//int INPUT_SIZE = 30;
+//char tempChars[21];
+//int winkels[4];
+//int data[7];
+//String msg;
+//char buffer[27];
 
 int ledPinAC = 24;  //rot
 int ledPin90= 28;   //gelb
@@ -33,16 +30,18 @@ boolean val_AC= false;      // variable to store the read value
 boolean val_90= false;
 boolean val_Off= true;
 
-void messageCb( const std_msgs::String& msg){
-  
-  buffer = msg.data;
-  digitalWrite(13,HIGH);
-  
+void servo_cb( const testing::Angles& cmd_msg){
+  rot_shoulder=cmd_msg.base;
+  angle_arm=cmd_msg.shoulder;
+  rot_upper=cmd_msg.upper_rot;
+  angle_forearm=cmd_msg.elbow;
+  rot_hand=cmd_msg.wrist_rot;
+  angle_hand=cmd_msg.wrist_ver;
+  claw_on_off=cmd_msg.gripper;
 }
 
-std_msgs::String str_msg;
-ros::Publisher chatter("arduino_response", &str_msg);
-ros::Subscriber<std_msgs::String> sub("angles", messageCb );
+//ros::Publisher chatter("arduino_response", &str_msg);
+ros::Subscriber<testing::Angles> sub("servo", servo_cb);
 
 void setup() {
   pinMode(ledPinAC, OUTPUT);
@@ -55,178 +54,110 @@ void setup() {
   pinMode(13, OUTPUT);
   nh.getHardware()->setBaud(115200);
   nh.initNode();
-  nh.advertise(chatter);
+  //nh.advertise(chatter);
   nh.subscribe(sub);
 
-  //Serial.begin(38400);
-  //Serial.println("<Arduino is ready>");
-  
   base.attach(11);
   shoulder.attach(10);
-  upper_rot.attach(9);     
+  upper_rot.attach(2);     
   elbow.attach(8);
   wrist_rot.attach(6);
   wrist_ver.attach(5);
   gripper.attach(3);
-  
 }
 
 void loop() {
-  nh.spinOnce();
-  recvWithEndMarker();
-  delay(1);
-//  angle_down();
-//  
-//  if(digitalRead(inPinAC)==LOW){
-//    val_AC = true;
-//    val_Off=false;
-//    delay(10);
-//  }
-//
-//  if(digitalRead(inPin90)==LOW){
-//    val_90 = true;
-//    val_Off=false;
-//    delay(10);
-//  }
-//
-//  digitalWrite(ledPinOff,val_Off);
-//  digitalWrite(ledPin90,val_90);
-//  digitalWrite(ledPinAC,val_AC);
-//  
-//  if(val_90==true){
-//    digitalWrite(ledPinOff,LOW);
-//    while(val_Off==LOW){
-//      angle_90();
-//      if(digitalRead(inPinOff)==LOW){
-//        val_Off = true;
-//        delay(10);
-//      }
-//    }
-//  }
-//
-//  else if(val_AC==true){
-//    digitalWrite(ledPinOff,LOW);
-//    while(val_Off==LOW){
-//      recvWithEndMarker();
-//      
-//      rot_shoulder = data[0];
-//      angle_arm = data[1];
-//      rot_upper = data[2];
-//      angle_forearm = data[3];
-//      angle_hand = data[4];
-//      rot_hand = data[5];
-//      claw_on_off = data[6];
-//  
-//      base.write(rot_shoulder);
-//      shoulder.write(angle_arm);
-//      upper_rot.write(rot_upper);
-//      elbow.write(angle_forearm);
-//      wrist_rot.write(rot_hand);
-//      wrist_ver.write(angle_hand);
-//      gripper.write(claw_on_off);
-//      if(digitalRead(inPinOff)==LOW){
-//        val_Off = true;
-//        delay(10);
-//      }
-//    }
-//  }
-//  val_AC=false;
-//  val_90=false;
-//  val_Off=true;
+  angle_down();
   
+  if(digitalRead(inPinAC)==LOW){
+    digitalWrite(13, HIGH-digitalRead(13));  //toggle led 
+    val_AC = true;
+    val_Off=false;
+    delay(10);
+  }
+
+  if(digitalRead(inPin90)==LOW){
+    digitalWrite(13, HIGH-digitalRead(13));  //toggle led 
+    val_90 = true;
+    val_Off=false;
+    delay(10);
+  }
+
+  digitalWrite(ledPinOff,val_Off);
+  digitalWrite(ledPin90,val_90);
+  digitalWrite(ledPinAC,val_AC);
+  
+  if(val_90==true){
+    digitalWrite(ledPinOff,LOW);
+    while(val_Off==LOW){
+      angle_90();
+      if(digitalRead(inPinOff)==LOW){
+        val_Off = true;
+        delay(10);
+      }
+    }
+  }
+
+  else if(val_AC==true){
+    digitalWrite(ledPinOff,LOW);
+    while(val_Off==LOW){
+      recvWithEndMarker();
+      if(digitalRead(inPinOff)==LOW){
+        val_Off = true;
+        delay(10);
+      }
+    }
+  }
+  val_AC=false;
+  val_90=false;
+  val_Off=true;
+  //delay(1);
 }
 
 void recvWithEndMarker() {
-  //while (Serial.available() > 0) {
-
-
-//    //aktuelles Zeichen einlesen
-//    msg = Serial.readStringUntil('\n');
-//
-//    Serial.println(msg);
-    msg.toCharArray(buffer, 27);
-    str_msg.data=msg;
-    chatter.publish( &str_msg );
-    //Serial.println(msg);
-//    strcpy(tempChars, buffer);
-//
-//
-//
-//
-//    char * buffer; // this is used by strtok() as an index
-//
-//    buffer = strtok(tempChars, ",");
-//    data[0] = atoi(buffer);
-//
-//    buffer = strtok(NULL, ","); // this continues where the previous call left off
-//    data[1] = atoi(buffer);     // convert this part to an integer
-//
-//    buffer = strtok(NULL, ",");
-//    data[2] = atoi(buffer);
-//
-//    buffer = strtok(NULL, ",");
-//    data[3] = atoi(buffer);
-//
-//    buffer = strtok(NULL, ",");
-//    data[4] = atoi(buffer);
-//
-//    buffer = strtok(NULL, ",");
-//    data[5] = atoi(buffer);
-//
-//    buffer = strtok(NULL, ",");
-//    data[6] = atoi(buffer);
-//
-//
-//               Serial.print("Data 0:");
-//               Serial.println(data[0]);
-//               Serial.print(" Data 1:");
-//               Serial.println(data[1]);
-//               Serial.print(" Data 2:");
-//               Serial.println(data[2]);
-//               Serial.print(" Data 3:");
-//               Serial.println(data[3]);
-//               Serial.print(" Data 4:");
-//               Serial.println(data[4]);
-//               Serial.print(" Data 5:");
-//               Serial.println(data[5]);
-//               Serial.print("Data 6:");
-//               Serial.println(data[6]);
-
-  //}
+  nh.spinOnce();
+  delay(1);
+  base.write(rot_shoulder);
+  shoulder.write(angle_arm);
+  upper_rot.write(rot_upper);
+  elbow.write(angle_forearm);
+  wrist_rot.write(rot_hand);
+  wrist_ver.write(angle_hand);
+  gripper.write(claw_on_off);
 }
-//
-//void angle_down(){
-//  rot_shoulder = 10;
-//  angle_arm = 10;
-//  rot_upper = 10;
-//  angle_forearm = 10;
-//  angle_hand = 10;
-//  rot_hand = 10;
-//  claw_on_off = 30;  //70:zu 30:offen
-//  
-//  base.write(rot_shoulder);
-//  shoulder.write(angle_arm);
-//  upper_rot.write(rot_upper);
-//  elbow.write(angle_forearm);
-//  wrist_rot.write(rot_hand);
-//  wrist_ver.write(angle_hand);
-//  gripper.write(claw_on_off);
-//}
-//
-//void angle_90(){
-//  rot_shoulder = 90;
-//  angle_arm = 90;
-//  rot_upper = 90;
-//  angle_forearm = 90;
-//  angle_hand = 90;
-//  rot_hand = 90;
-//  claw_on_off = 70;  //70:zu 30:offen
-//  
-//  base.write(rot_shoulder);
-//  shoulder.write(angle_arm);
-//  upper_rot.write(rot_upper);
-//  elbow.write(angle_forearm);
-//  wrist_rot.write(rot_hand);
-//  wrist_ver.write(angle_hand);
-//  gripper.write(claw_on_off);
-//}
+
+void angle_down(){
+  rot_shoulder = 10;
+  angle_arm = 10;
+  rot_upper = 10;
+  angle_forearm = 10;
+  angle_hand = 10;
+  rot_hand = 10;
+  claw_on_off = 30;  //70:zu 30:offen
+  
+  base.write(rot_shoulder);
+  shoulder.write(angle_arm);
+  upper_rot.write(rot_upper);
+  elbow.write(angle_forearm);
+  wrist_rot.write(rot_hand);
+  wrist_ver.write(angle_hand);
+  gripper.write(claw_on_off);
+}
+
+void angle_90(){
+  rot_shoulder = 90;
+  angle_arm = 90;
+  rot_upper = 90;
+  angle_forearm = 90;
+  angle_hand = 90;
+  rot_hand = 90;
+  claw_on_off = 70;  //70:zu 30:offen
+  
+  base.write(rot_shoulder);
+  shoulder.write(angle_arm);
+  upper_rot.write(rot_upper);
+  elbow.write(angle_forearm);
+  wrist_rot.write(rot_hand);
+  wrist_ver.write(angle_hand);
+  gripper.write(claw_on_off);
+}
