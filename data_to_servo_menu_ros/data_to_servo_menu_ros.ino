@@ -22,13 +22,13 @@ int angle_arm, angle_forearm, angle_hand, rot_hand, rot_shoulder, claw_on_off,ro
 
 int ledPinAC = 24;  //rot
 int ledPin90= 28;   //gelb
-int ledPinOff= 32;  //grün
+int ledPinStop= 32;  //grün
 int inPinAC= 22;    // pushbutton connected to digital pin 7
 int inPin90= 26; 
-int inPinOff= 30;
+int inPinStop= 30;
 boolean val_AC= false;      // variable to store the read value
 boolean val_90= false;
-boolean val_Off= true;
+boolean val_Stop= true;
 
 void servo_cb( const testing::Angles& cmd_msg){
   rot_shoulder=cmd_msg.base;
@@ -46,10 +46,10 @@ ros::Subscriber<testing::Angles> sub("servo", servo_cb);
 void setup() {
   pinMode(ledPinAC, OUTPUT);
   pinMode(ledPin90, OUTPUT);
-  pinMode(ledPinOff, OUTPUT);
+  pinMode(ledPinStop, OUTPUT);
   pinMode(inPinAC, INPUT_PULLUP); 
   pinMode(inPin90, INPUT_PULLUP);
-  pinMode(inPinOff, INPUT_PULLUP);
+  pinMode(inPinStop, INPUT_PULLUP);
 
   pinMode(13, OUTPUT);
   nh.getHardware()->setBaud(115200);
@@ -59,64 +59,56 @@ void setup() {
 
   base.attach(11);
   shoulder.attach(10);
-  upper_rot.attach(2);     
+  upper_rot.attach(9);     
   elbow.attach(8);
   wrist_rot.attach(6);
   wrist_ver.attach(5);
   gripper.attach(3);
+
+  angle_down();
 }
 
 void loop() {
-  angle_down();
+  nh.spinOnce();
+  delay(1);
+  if(digitalRead(inPinStop)==LOW){
+    val_AC = false;
+    val_90=false;
+    val_Stop=true;
+    delay(10);
+  }
   
-  if(digitalRead(inPinAC)==LOW){
-    digitalWrite(13, HIGH-digitalRead(13));  //toggle led 
+  else if(digitalRead(inPinAC)==LOW){
     val_AC = true;
-    val_Off=false;
+    val_90=false;
+    val_Stop=false;
     delay(10);
   }
 
-  if(digitalRead(inPin90)==LOW){
-    digitalWrite(13, HIGH-digitalRead(13));  //toggle led 
+  else if(digitalRead(inPin90)==LOW){
+    val_AC=false;
     val_90 = true;
-    val_Off=false;
+    val_Stop=false;
     delay(10);
   }
 
-  digitalWrite(ledPinOff,val_Off);
+  digitalWrite(ledPinStop,val_Stop);
   digitalWrite(ledPin90,val_90);
   digitalWrite(ledPinAC,val_AC);
   
   if(val_90==true){
-    digitalWrite(ledPinOff,LOW);
-    while(val_Off==LOW){
-      angle_90();
-      if(digitalRead(inPinOff)==LOW){
-        val_Off = true;
-        delay(10);
-      }
-    }
+    angle_90();
   }
 
   else if(val_AC==true){
-    digitalWrite(ledPinOff,LOW);
-    while(val_Off==LOW){
-      recvWithEndMarker();
-      if(digitalRead(inPinOff)==LOW){
-        val_Off = true;
-        delay(10);
-      }
-    }
+    recvWithEndMarker();
   }
-  val_AC=false;
-  val_90=false;
-  val_Off=true;
-  //delay(1);
+
+  delay(1);
 }
 
 void recvWithEndMarker() {
-  nh.spinOnce();
-  delay(1);
+  
   base.write(rot_shoulder);
   shoulder.write(angle_arm);
   upper_rot.write(rot_upper);
@@ -127,13 +119,13 @@ void recvWithEndMarker() {
 }
 
 void angle_down(){
-  rot_shoulder = 10;
-  angle_arm = 10;
-  rot_upper = 10;
-  angle_forearm = 10;
-  angle_hand = 10;
-  rot_hand = 10;
-  claw_on_off = 30;  //70:zu 30:offen
+  rot_shoulder = 55;
+  angle_arm = 79;
+  rot_upper = 63;
+  angle_forearm = 0;
+  angle_hand = 90;
+  rot_hand = -5;
+  claw_on_off = 0;  //70:zu 30:offen
   
   base.write(rot_shoulder);
   shoulder.write(angle_arm);

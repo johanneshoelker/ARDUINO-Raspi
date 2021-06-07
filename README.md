@@ -7,4 +7,5 @@ and afterwards the following changes should be made in ArduinoHardware.h:
 Serial1 -> Serial	(because of Arduino Due. The according ArduinoHardware.h is attached in arduino_ws)
 In order to communicate with the Arduino the following command should be played:
 rosrun rosserial_arduino serial_node.py _port:=/dev/ttyACM0 _baud:=115200
+If a bad connection occurs test by changing Baudrate and delays in the script.
 
