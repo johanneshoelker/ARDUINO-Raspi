@@ -119,13 +119,13 @@ void recvWithEndMarker() {
 }
 
 void angle_down(){
-  rot_shoulder = 55;
-  angle_arm = 79;
-  rot_upper = 63;
-  angle_forearm = 0;
-  angle_hand = 90;
-  rot_hand = -5;
-  claw_on_off = 0;  //70:zu 30:offen
+  rot_shoulder = 34;
+  angle_arm = 70;
+  rot_upper = 85;
+  angle_forearm = 1;
+  angle_hand = 105;
+  rot_hand = 87;
+  claw_on_off = 4;  //70:zu 30:offen
   
   base.write(rot_shoulder);
   shoulder.write(angle_arm);
