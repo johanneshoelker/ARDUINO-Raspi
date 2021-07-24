@@ -143,7 +143,7 @@ void angle_90(){
   angle_forearm = 90;
   angle_hand = 90;
   rot_hand = 90;
-  claw_on_off = 70;  //70:zu 30:offen
+  claw_on_off = 110;  //70:zu 30:offen
   
   base.write(rot_shoulder);
   shoulder.write(angle_arm);
