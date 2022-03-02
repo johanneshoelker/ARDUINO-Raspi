@@ -30,7 +30,7 @@ boolean val_AC= false;      // variable to store the read value
 boolean val_90= false;
 boolean val_Stop= true;
 
-void servo_cb( const testing::Angles& cmd_msg){
+void servo_cb( const anthropomorphic_manipulator::Angles& cmd_msg){
   rot_shoulder=cmd_msg.base;
   angle_arm=cmd_msg.shoulder;
   rot_upper=cmd_msg.upper_rot;
